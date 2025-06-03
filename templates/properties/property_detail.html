@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ property.title }} | {% trans "Détails de la propriété" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{% url 'home' %}">{% trans "Accueil" %}</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'properties:property_list' %}">{% trans "Propriétés" %}</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{ property.title }}</li>
+        </ol>
+    </nav>
+
+    <div class="row">
+        <!-- Main Content -->
+        <div class="col-lg-8">
+            <!-- Property Images -->
+            <div class="card mb-4">
+                <div class="card-body p-0">
+                    {% if property.image %}
+                        <img src="{{ property.image.url }}" alt="{{ property.title }}" class="img-fluid w-100" style="max-height: 500px; object-fit: cover;">
+                    {% endif %}
+                    
+                    {% if property.images.all %}
+                        <div class="row g-2 mt-2 px-2 pb-2">
+                            {% for img in property.images.all %}
+                                <div class="col-3">
+                                    <img src="{{ img.image.url }}" alt="{{ img.alt_text }}" class="img-thumbnail" style="height: 100px; object-fit: cover;">
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Property Details -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h1 class="h2 mb-3">{{ property.title }}</h1>
+                    {% if LANGUAGE_CODE == 'ar' and property.title_ar %}
+                        <h2 class="h3 mb-3 text-muted">{{ property.title_ar }}</h2>
+                    {% endif %}
+                    
+                    <div class="d-flex align-items-center mb-4">
+                        <h3 class="h4 text-primary mb-0">{{ property.price|floatformat:0 }} {% trans "MAD" %}</h3>
+                        {% if property.available %}
+                            <span class="badge bg-success ms-3">{% trans "Disponible" %}</span>
+                        {% else %}
+                            <span class="badge bg-danger ms-3">{% trans "Non disponible" %}</span>
+                        {% endif %}
+                    </div>
+
+                    <!-- Key Features -->
+                    <div class="row g-4 mb-4">
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-ruler-combined text-primary fa-2x me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">{% trans "Surface" %}</small>
+                                    <strong>{{ property.size }} m²</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-bed text-primary fa-2x me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">{% trans "Chambres" %}</small>
+                                    <strong>{{ property.rooms }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-bath text-primary fa-2x me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">{% trans "Salles de bain" %}</small>
+                                    <strong>{{ property.bathrooms }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6 col-md-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-map-marker-alt text-primary fa-2x me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">{% trans "Ville" %}</small>
+                                    <strong>{{ property.city }}</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description -->
+                    <h4 class="mb-3">{% trans "Description" %}</h4>
+                    <p class="mb-4">{{ property.description|linebreaks }}</p>
+                    {% if LANGUAGE_CODE == 'ar' and property.description_ar %}
+                        <p class="mb-4">{{ property.description_ar|linebreaks }}</p>
+                    {% endif %}
+
+                    <!-- Location -->
+                    <h4 class="mb-3">{% trans "Localisation" %}</h4>
+                    <p class="mb-0">{{ property.address }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Contact Form -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">{% trans "Contactez-nous" %}</h4>
+                    <form method="post" action="{% url 'properties:contact_property' property.id %}">
+                        {% csrf_token %}
+                        {% if user.is_authenticated %}
+                            <div class="alert alert-info">
+                                <small>
+                                    {% trans "Vous envoyez ce message en tant que" %} <strong>{{ user.get_full_name }}</strong>
+                                    <br>
+                                    {% trans "Email" %}: {{ user.email }}
+                                    {% if user.profile.phone %}
+                                    <br>
+                                    {% trans "Téléphone" %}: {{ user.profile.phone }}
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <label for="message" class="form-label">{% trans "Message" %}</label>
+                                <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                            </div>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i>{% trans "Envoyer" %}
+                            </button>
+                        {% else %}
+                            <div class="mb-3">
+                                <label for="message" class="form-label">{% trans "Message" %}</label>
+                                <textarea class="form-control" id="message" name="message" rows="4" required></textarea>
+                            </div>
+                            <a href="{% url 'accounts:login' %}?next={{ request.path }}" class="btn btn-primary w-100">
+                                <i class="fas fa-sign-in-alt me-2"></i>{% trans "Se connecter pour envoyer" %}
+                            </a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <!-- Share -->
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">{% trans "Partager" %}</h4>
+                    <div class="d-flex gap-2">
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                           target="_blank" class="btn btn-outline-primary flex-grow-1">
+                            <i class="fab fa-facebook-f"></i>
+                        </a>
+                        <a href="https://twitter.com/intent/tweet?url={{ request.build_absolute_uri }}&text={{ property.title }}" 
+                           target="_blank" class="btn btn-outline-info flex-grow-1">
+                            <i class="fab fa-twitter"></i>
+                        </a>
+                        <a href="https://wa.me/?text={{ property.title }}%20{{ request.build_absolute_uri }}" 
+                           target="_blank" class="btn btn-outline-success flex-grow-1">
+                            <i class="fab fa-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Image gallery functionality
+    const thumbnails = document.querySelectorAll('.img-thumbnail');
+    const mainImage = document.querySelector('.card-body img.img-fluid');
+    
+    thumbnails.forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            mainImage.src = this.src;
+        });
+    });
+});
+</script>
+{% endblock %} 

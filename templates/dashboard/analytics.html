@@ -1,0 +1,290 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Analytiques" %}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid py-4">
+    <!-- Period Filter -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row align-items-center">
+                <div class="col-auto">
+                    <label for="period" class="form-label mb-0">{% trans "Période" %}</label>
+                </div>
+                <div class="col-auto">
+                    <select name="period" id="period" class="form-select" onchange="this.form.submit()">
+                        <option value="7" {% if period == '7' %}selected{% endif %}>{% trans "7 derniers jours" %}</option>
+                        <option value="30" {% if period == '30' %}selected{% endif %}>{% trans "30 derniers jours" %}</option>
+                        <option value="90" {% if period == '90' %}selected{% endif %}>{% trans "90 derniers jours" %}</option>
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Stats Overview -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="stats-icon bg-primary text-white">
+                                <i class="fas fa-eye"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="card-subtitle text-muted mb-1">{% trans "Vues totales" %}</h6>
+                            <h3 class="card-title mb-0">{{ total_views }}</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4 mb-4">
+        <!-- Daily Views Chart -->
+        <div class="col-lg-8">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans "Vues par jour" %}</h5>
+                    <canvas id="dailyViewsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Property Types Chart -->
+        <div class="col-lg-4">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title">{% trans "Vues par type de propriété" %}</h5>
+                    <canvas id="propertyTypesChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Property Performance -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-4">{% trans "Performance des propriétés" %}</h5>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>{% trans "Propriété" %}</th>
+                            <th>{% trans "Type" %}</th>
+                            <th>{% trans "Ville" %}</th>
+                            <th>{% trans "Prix" %}</th>
+                            <th>{% trans "Vues" %}</th>
+                            <th>{% trans "Statut" %}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for property in properties_analytics %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'dashboard:edit_property' property.id %}" class="text-decoration-none">
+                                        {{ property.title }}
+                                    </a>
+                                </td>
+                                <td>{{ property.type }}</td>
+                                <td>{{ property.city }}</td>
+                                <td>{{ property.price|floatformat:0 }} {% trans "MAD" %}</td>
+                                <td>{{ property.view_count }}</td>
+                                <td>
+                                    <div class="d-flex gap-2">
+                                        <span class="badge {% if property.available %}bg-success{% else %}bg-danger{% endif %}">
+                                            {% if property.available %}
+                                                {% trans "Disponible" %}
+                                            {% else %}
+                                                {% trans "Non disponible" %}
+                                            {% endif %}
+                                        </span>
+                                        {% if property.featured %}
+                                            <span class="badge bg-warning">{% trans "En vedette" %}</span>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- City Performance -->
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{% trans "Performance par ville" %}</h5>
+                    <canvas id="cityPerformanceChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h5 class="card-title mb-4">{% trans "Détails par ville" %}</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>{% trans "Ville" %}</th>
+                                    <th>{% trans "Propriétés" %}</th>
+                                    <th>{% trans "Vues" %}</th>
+                                    <th>{% trans "Moy. vues/prop." %}</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for city in city_performance %}
+                                    <tr>
+                                        <td>{{ city.city }}</td>
+                                        <td>{{ city.property_count }}</td>
+                                        <td>{{ city.view_count }}</td>
+                                        <td>
+                                            {% if city.property_count > 0 %}
+                                                {{ city.view_count|divisibleby:city.property_count|floatformat:1 }}
+                                            {% else %}
+                                                0
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.stats-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Daily Views Chart
+    const dailyCtx = document.getElementById('dailyViewsChart').getContext('2d');
+    const dailyData = JSON.parse('{{ daily_chart|escapejs }}');
+    new Chart(dailyCtx, {
+        type: 'line',
+        data: {
+            labels: dailyData.labels,
+            datasets: [{
+                label: '{% trans "Vues" %}',
+                data: dailyData.data,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // Property Types Chart
+    const typeCtx = document.getElementById('propertyTypesChart').getContext('2d');
+    const typeData = JSON.parse('{{ type_chart|escapejs }}');
+    new Chart(typeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: typeData.labels,
+            datasets: [{
+                data: typeData.data,
+                backgroundColor: [
+                    '#0d6efd',
+                    '#6610f2',
+                    '#6f42c1',
+                    '#d63384',
+                    '#dc3545',
+                    '#fd7e14',
+                    '#ffc107',
+                    '#198754'
+                ]
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // City Performance Chart
+    const cityCtx = document.getElementById('cityPerformanceChart').getContext('2d');
+    const cityData = JSON.parse('{{ city_chart|escapejs }}');
+    new Chart(cityCtx, {
+        type: 'bar',
+        data: {
+            labels: cityData.labels,
+            datasets: [{
+                label: '{% trans "Vues" %}',
+                data: cityData.data,
+                backgroundColor: 'rgba(13, 110, 253, 0.8)'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,231 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Vue d'ensemble" %}{% endblock %}
+
+{% block dashboard_content %}
+<!-- Stats Cards -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stats-icon bg-success bg-opacity-10 text-success rounded p-3">
+                            <i class="fas fa-building fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-title mb-0">{% trans "Propriétés" %}</h6>
+                        <h2 class="mt-2 mb-0">{{ total_properties }}</h2>
+                        <p class="text-muted small mb-0">
+                            {{ active_properties }} {% trans "actives" %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stats-icon bg-primary bg-opacity-10 text-primary rounded p-3">
+                            <i class="fas fa-star fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-title mb-0">{% trans "En vedette" %}</h6>
+                        <h2 class="mt-2 mb-0">{{ featured_properties }}</h2>
+                        <p class="text-muted small mb-0">
+                            {% trans "propriétés" %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stats-icon bg-warning bg-opacity-10 text-warning rounded p-3">
+                            <i class="fas fa-eye fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-title mb-0">{% trans "Vues" %}</h6>
+                        <h2 class="mt-2 mb-0">{{ views_last_30_days }}</h2>
+                        <p class="text-muted small mb-0">
+                            {% trans "30 derniers jours" %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-lg-3">
+        <div class="card stats-card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center">
+                    <div class="flex-shrink-0">
+                        <div class="stats-icon bg-info bg-opacity-10 text-info rounded p-3">
+                            <i class="fas fa-envelope fa-2x"></i>
+                        </div>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="card-title mb-0">{% trans "Contacts" %}</h6>
+                        <h2 class="mt-2 mb-0">{{ total_contacts }}</h2>
+                        <p class="text-muted small mb-0">
+                            {{ unread_contacts }} {% trans "non lus" %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+    <div class="col-lg-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{% trans "Vues par jour" %}</h5>
+                <div class="chart-container">
+                    <canvas id="viewsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">{% trans "Propriétés les plus vues" %}</h5>
+                <div class="list-group list-group-flush">
+                    {% for property in most_viewed %}
+                        <div class="list-group-item px-0">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <h6 class="mb-1">{{ property.title }}</h6>
+                                    <small class="text-muted">{{ property.city }}</small>
+                                </div>
+                                <span class="badge bg-success rounded-pill">
+                                    {{ property.view_count }} {% trans "vues" %}
+                                </span>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted text-center my-3">
+                            {% trans "Aucune donnée disponible" %}
+                        </p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Contacts -->
+<div class="card">
+    <div class="card-body">
+        <h5 class="card-title">{% trans "Contacts récents" %}</h5>
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{% trans "Nom" %}</th>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Propriété" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Statut" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in recent_contacts %}
+                        <tr>
+                            <td>{{ contact.name }}</td>
+                            <td>{{ contact.email }}</td>
+                            <td>
+                                {% if contact.property %}
+                                    <a href="{{ contact.property.get_absolute_url }}" target="_blank">
+                                        {{ contact.property.title }}
+                                    </a>
+                                {% else %}
+                                    {% trans "Contact général" %}
+                                {% endif %}
+                            </td>
+                            <td>{{ contact.timestamp|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                {% if contact.is_read %}
+                                    <span class="badge bg-success">{% trans "Lu" %}</span>
+                                {% else %}
+                                    <span class="badge bg-warning">{% trans "Non lu" %}</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">
+                                {% trans "Aucun contact récent" %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+(function() {
+    // Get chart data from Django context
+    const chartData = JSON.parse('{{ chart_data|escapejs }}');
+    
+    // Initialize chart
+    const ctx = document.getElementById('viewsChart').getContext('2d');
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.labels,
+            datasets: [{
+                label: '{% trans "Vues"|escapejs %}',
+                data: chartData.data,
+                borderColor: '#198754',
+                backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+})();
+</script>
+{% endblock %} 

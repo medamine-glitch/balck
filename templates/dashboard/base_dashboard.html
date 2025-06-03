@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{{ block.super }} | Administration{% endblock %}
+
+{% block dashboard_title %}Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+#sidebar {
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+#sidebar .nav-link {
+    padding: 0.75rem 1rem;
+    border-radius: 0.25rem;
+    transition: all 0.3s;
+}
+
+#sidebar .nav-link:hover,
+#sidebar .nav-link.active {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.main-content {
+    min-height: 100vh;
+}
+
+.dashboard-wrapper {
+    margin-top: -2rem;  /* To compensate for the main navbar */
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper d-flex">
+    <!-- Sidebar -->
+    <nav id="sidebar" class="bg-dark text-white" style="min-width: 250px; min-height: 100vh;">
+        <div class="p-4">
+            <h3 class="text-white mb-4">
+                <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+            </h3>
+            
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link text-white {% if request.resolver_match.url_name == 'overview' %}active{% endif %}" 
+                       href="{% url 'dashboard:overview' %}">
+                        <i class="fas fa-home me-2"></i>{% trans "Vue d'ensemble" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white {% if 'property' in request.resolver_match.url_name %}active{% endif %}" 
+                       href="{% url 'dashboard:property_management' %}">
+                        <i class="fas fa-building me-2"></i>{% trans "Propriétés" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}" 
+                       href="{% url 'dashboard:analytics' %}">
+                        <i class="fas fa-chart-line me-2"></i>{% trans "Analytiques" %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white {% if request.resolver_match.url_name == 'contact_management' %}active{% endif %}" 
+                       href="{% url 'dashboard:contact_management' %}">
+                        <i class="fas fa-envelope me-2"></i>{% trans "Contacts" %}
+                        {% with unread_count=request.user.unread_contacts_count %}
+                            {% if unread_count %}
+                                <span class="badge bg-danger ms-2">{{ unread_count }}</span>
+                            {% endif %}
+                        {% endwith %}
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-white {% if request.resolver_match.url_name == 'website_settings' %}active{% endif %}" 
+                       href="{% url 'dashboard:website_settings' %}">
+                        <i class="fas fa-cog me-2"></i>{% trans "Paramètres" %}
+                    </a>
+                </li>
+            </ul>
+
+            <hr class="my-4">
+
+            <div class="user-info">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-user-circle fa-2x text-white-50"></i>
+                    </div>
+                    <div class="flex-grow-1 ms-3">
+                        <h6 class="mb-0 text-white">{{ request.user.get_full_name }}</h6>
+                        <small class="text-white-50">{{ request.user.email }}</small>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'dashboard:user_profile' %}" class="btn btn-outline-light btn-sm">
+                        <i class="fas fa-user-cog me-2"></i>{% trans "Mon profil" %}
+                    </a>
+                    <a href="{% url 'accounts:logout' %}" class="btn btn-outline-danger btn-sm">
+                        <i class="fas fa-sign-out-alt me-2"></i>{% trans "Déconnexion" %}
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="main-content flex-grow-1 bg-light">
+        {% if messages %}
+            <div class="container-fluid pt-4">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <div class="container-fluid p-4">
+            {% block dashboard_content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add any dashboard-wide JavaScript here
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize all tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+});
+</script>
+{% endblock %} 

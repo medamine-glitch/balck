@@ -1,0 +1,192 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Properties" %}{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <!-- Page Header -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h1 class="h2 mb-2" style="color: var(--black);">{% trans "Find Your Dream Home" %}</h1>
+            <p class="text-secondary mb-0">{% trans "Browse through our collection of properties" %}</p>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="search-bar mb-5">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label for="city" class="form-label text-secondary">{% trans "Location" %}</label>
+                <input type="text" class="form-control" id="city" name="city" 
+                       placeholder="{% trans 'Enter city name' %}" value="{{ request.GET.city }}">
+            </div>
+            <div class="col-md-3">
+                <label for="type" class="form-label text-secondary">{% trans "Property Type" %}</label>
+                <select class="form-select" id="type" name="type">
+                    <option value="">{% trans "All Types" %}</option>
+                    {% for code, name in property_types %}
+                        <option value="{{ code }}" {% if code == request.GET.type %}selected{% endif %}>
+                            {{ name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label for="min_price" class="form-label text-secondary">{% trans "Min Price" %}</label>
+                <input type="number" class="form-control" id="min_price" name="min_price" 
+                       value="{{ request.GET.min_price }}" placeholder="0">
+            </div>
+            <div class="col-md-3">
+                <label for="max_price" class="form-label text-secondary">{% trans "Max Price" %}</label>
+                <input type="number" class="form-control" id="max_price" name="max_price"
+                       value="{{ request.GET.max_price }}" placeholder="0">
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-search me-2"></i>{% trans "Search" %}
+                </button>
+                <a href="{% url 'properties:property_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-redo me-2"></i>{% trans "Reset" %}
+                </a>
+            </div>
+        </form>
+    </div>
+
+    <!-- Properties Grid -->
+    <div class="row g-4">
+        {% for property in page_obj %}
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'properties:property_detail' property.id %}" class="text-decoration-none property-card-link">
+                    <div class="property-card card h-100">
+                        {% if property.image %}
+                            <img src="{{ property.image.url }}" class="card-img-top" alt="{{ property.title }}">
+                        {% else %}
+                            <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                                <i class="fas fa-home fa-3x" style="color: var(--slate-gray);"></i>
+                            </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge">{{ property.get_property_type_display }}</span>
+                                <span class="property-price" style="color: var(--muted-gold);">{{ property.price|floatformat:0 }} MAD</span>
+                            </div>
+                            <h5 class="card-title mb-1">{{ property.title }}</h5>
+                            <p class="property-location mb-3 text-secondary">
+                                <i class="fas fa-map-marker-alt me-1"></i>{{ property.city }}
+                            </p>
+                            <div class="property-features text-secondary">
+                                <span><i class="fas fa-ruler-combined me-1"></i>{{ property.size }} m²</span>
+                                <span><i class="fas fa-bed me-1"></i>{{ property.rooms }}</span>
+                                <span><i class="fas fa-bath me-1"></i>{{ property.bathrooms }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </a>
+            </div>
+        {% empty %}
+            <div class="col-12">
+                <div class="alert alert-secondary text-center">
+                    <i class="fas fa-info-circle me-2"></i>{% trans "No properties found" %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.paginator.num_pages > 1 %}
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if query_string %}&{{ query_string }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if query_string %}&{{ query_string }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if query_string %}&{{ query_string }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if query_string %}&{{ query_string }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.property-card {
+    transition: transform 0.3s, box-shadow 0.3s;
+    border: 1px solid var(--slate-gray);
+}
+
+.property-card-link:hover .property-card {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    border-color: var(--muted-gold);
+}
+
+.property-card-link {
+    display: block;
+    color: inherit;
+}
+
+.property-card-link:hover {
+    color: inherit;
+}
+
+.property-features {
+    color: var(--slate-gray);
+}
+
+.property-features span {
+    margin-right: 1rem;
+}
+
+.property-features span:last-child {
+    margin-right: 0;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: var(--muted-gold);
+    box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+}
+
+.search-bar {
+    background-color: #f8f9fa;
+    padding: 2rem;
+    border-radius: 0.5rem;
+    border: 1px solid var(--slate-gray);
+}
+</style>
+{% endblock %} 

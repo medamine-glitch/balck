@@ -1,0 +1,351 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Gestion des contacts" %}{% endblock %}
+
+{% block dashboard_content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 class="h3 mb-0">{% trans "Gestion des contacts" %}</h1>
+    <div class="btn-group">
+        <button type="button" class="btn btn-outline-secondary {% if not status %}active{% endif %}" data-status="all">
+            {% trans "Tous" %}
+        </button>
+        <button type="button" class="btn btn-outline-secondary {% if status == 'unread' %}active{% endif %}" data-status="unread">
+            {% trans "Non lus" %}
+        </button>
+        <button type="button" class="btn btn-outline-secondary {% if status == 'read' %}active{% endif %}" data-status="read">
+            {% trans "Lus" %}
+        </button>
+    </div>
+</div>
+
+<!-- Contacts Table -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>{% trans "Nom" %}</th>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Téléphone" %}</th>
+                        <th>{% trans "Message" %}</th>
+                        <th>{% trans "Propriété" %}</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for contact in page_obj %}
+                        <tr class="{% if not contact.is_read %}table-active{% endif %}">
+                            <td>{{ contact.name }}</td>
+                            <td>{{ contact.email }}</td>
+                            <td>{{ contact.phone_number|default:"N/A" }}</td>
+                            <td>{{ contact.message|truncatechars:50 }}</td>
+                            <td>
+                                {% if contact.property %}
+                                    <a href="{% url 'properties:property_detail' contact.property.id %}">
+                                        {{ contact.property.title }}
+                                    </a>
+                                {% else %}
+                                    {% trans "N/A" %}
+                                {% endif %}
+                            </td>
+                            <td>{{ contact.timestamp|date:"d/m/Y H:i" }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#contactModal{{ contact.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ contact.id }}">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="text-center py-4">
+                                <p class="text-muted mb-0">{% trans "Aucun contact trouvé" %}</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        {% if page_obj.paginator.num_pages > 1 %}
+            <nav class="mt-4">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if status %}&status={{ status }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if status %}&status={{ status }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if status %}&status={{ status }}{% endif %}">
+                                    {{ num }}
+                                </a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if status %}&status={{ status }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if status %}&status={{ status }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        {% endif %}
+    </div>
+</div>
+
+{% for contact in page_obj %}
+<!-- Contact Details Modal -->
+<div class="modal fade" id="contactModal{{ contact.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header border-0 pb-0">
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body pt-0">
+                <!-- Sender Info Section -->
+                <div class="sender-info mb-4">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="sender-avatar me-3">
+                            <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center text-white" style="width: 48px; height: 48px;">
+                                {{ contact.name|make_list|first|upper }}
+                            </div>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">{{ contact.name }}</h5>
+                            <div class="text-muted small">
+                                <span class="me-3">
+                                    <i class="fas fa-envelope me-1"></i>
+                                    <a href="mailto:{{ contact.email }}" class="text-muted text-decoration-none">{{ contact.email }}</a>
+                                </span>
+                                {% if contact.phone_number %}
+                                <span>
+                                    <i class="fas fa-phone me-1"></i>
+                                    <a href="tel:{{ contact.phone_number }}" class="text-muted text-decoration-none">{{ contact.phone_number }}</a>
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if contact.property %}
+                    <div class="property-info p-3 bg-light rounded mb-3">
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-home text-primary me-2"></i>
+                            <div>
+                                <div class="fw-bold">{% trans "Propriété concernée" %}</div>
+                                <a href="{% url 'properties:property_detail' contact.property.id %}" class="text-decoration-none">
+                                    {{ contact.property.title }}
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="message-time small text-muted mb-3">
+                        <i class="fas fa-clock me-1"></i>
+                        {{ contact.timestamp|date:"d/m/Y H:i" }}
+                    </div>
+                </div>
+
+                <!-- Message Content -->
+                <div class="message-content">
+                    <div class="message-box p-3 bg-light rounded">
+                        {{ contact.message|linebreaks }}
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Fermer" %}
+                </button>
+                {% if not contact.is_read %}
+                    <form action="{% url 'dashboard:mark_contact_read' contact.id %}" method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-check me-2"></i>{% trans "Marquer comme lu" %}
+                        </button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal{{ contact.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{% trans "Confirmer la suppression" %}</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>{% trans "Êtes-vous sûr de vouloir supprimer ce message ?" %}</p>
+                <p class="mb-0">
+                    <strong>{{ contact.name }}</strong> - {{ contact.email }}
+                    {% if contact.property %}
+                        <br>{% trans "Propriété" %}: {{ contact.property.title }}
+                    {% endif %}
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    {% trans "Annuler" %}
+                </button>
+                <form action="{% url 'dashboard:delete_contact' contact.id %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="fas fa-trash me-2"></i>{% trans "Supprimer" %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.modal-lg {
+    max-width: 800px;
+}
+
+.modal-content {
+    border: none;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.sender-avatar .rounded-circle {
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.message-box {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    font-size: 15px;
+    line-height: 1.6;
+}
+
+.property-info {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+}
+
+.property-info:hover {
+    background-color: #f0f2f5;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 8px 16px;
+}
+
+.message-time {
+    color: #6c757d;
+}
+
+/* Animation for modal */
+.modal.fade .modal-dialog {
+    transform: scale(0.95);
+    transition: transform 0.2s ease-out;
+}
+
+.modal.show .modal-dialog {
+    transform: scale(1);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get CSRF token
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+
+    // Status filter
+    document.querySelectorAll('[data-status]').forEach(button => {
+        button.addEventListener('click', function() {
+            const status = this.dataset.status;
+            if (status === 'all') {
+                window.location.href = '{% url "dashboard:contact_management" %}';
+            } else {
+                window.location.href = '{% url "dashboard:contact_management" %}?status=' + status;
+            }
+        });
+    });
+
+    // Mark as read when modal is shown
+    document.querySelectorAll('[id^="contactModal"]').forEach(modal => {
+        modal.addEventListener('shown.bs.modal', function() {
+            const contactId = this.id.replace('contactModal', '');
+            const row = document.querySelector(`tr[data-contact-id="${contactId}"]`);
+            
+            if (row && row.classList.contains('table-active')) {
+                fetch('{% url "dashboard:mark_contact_read" 0 %}'.replace('0', contactId), {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': csrfToken,
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        row.classList.remove('table-active');
+                        const unreadBadge = document.querySelector('#unread-contacts-count');
+                        if (unreadBadge) {
+                            const currentCount = parseInt(unreadBadge.textContent);
+                            if (currentCount > 0) {
+                                unreadBadge.textContent = currentCount - 1;
+                                if (currentCount - 1 === 0) {
+                                    unreadBadge.style.display = 'none';
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %} 

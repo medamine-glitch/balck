@@ -1,0 +1,263 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block dashboard_title %}{% trans "Gestion des propriétés" %}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{% trans "Gestion des propriétés" %}</h1>
+        <a href="{% url 'dashboard:add_property' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>{% trans "Ajouter une propriété" %}
+        </a>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <input type="text" class="form-control" name="search" placeholder="{% trans 'Rechercher...' %}"
+                           value="{{ search }}">
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="type">
+                        <option value="">{% trans "Tous les types" %}</option>
+                        {% for code, name in property_types %}
+                            <option value="{{ code }}" {% if code == property_type %}selected{% endif %}>
+                                {{ name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <select class="form-select" name="status">
+                        <option value="">{% trans "Tous les statuts" %}</option>
+                        <option value="available" {% if status == 'available' %}selected{% endif %}>
+                            {% trans "Disponible" %}
+                        </option>
+                        <option value="unavailable" {% if status == 'unavailable' %}selected{% endif %}>
+                            {% trans "Non disponible" %}
+                        </option>
+                        <option value="featured" {% if status == 'featured' %}selected{% endif %}>
+                            {% trans "En vedette" %}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-2"></i>{% trans "Filtrer" %}
+                    </button>
+                    {% if request.GET %}
+                        <a href="{% url 'dashboard:property_management' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-times me-2"></i>{% trans "Réinitialiser" %}
+                        </a>
+                    {% endif %}
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Properties Table -->
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th>{% trans "Image" %}</th>
+                        <th>{% trans "Titre" %}</th>
+                        <th>{% trans "Type" %}</th>
+                        <th>{% trans "Ville" %}</th>
+                        <th>{% trans "Prix" %}</th>
+                        <th>{% trans "Vues" %}</th>
+                        <th>{% trans "Statut" %}</th>
+                        <th>{% trans "Actions" %}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for property in page_obj %}
+                        <tr>
+                            <td style="width: 100px;">
+                                {% if property.image %}
+                                    <img src="{{ property.image.url }}" alt="{{ property.title }}" 
+                                         class="img-thumbnail" style="width: 80px; height: 60px; object-fit: cover;">
+                                {% else %}
+                                    <div class="bg-light d-flex align-items-center justify-content-center" 
+                                         style="width: 80px; height: 60px;">
+                                        <i class="fas fa-home text-muted"></i>
+                                    </div>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <a href="{% url 'dashboard:edit_property' property.id %}" class="text-decoration-none">
+                                    {{ property.title }}
+                                </a>
+                            </td>
+                            <td>{{ property.get_property_type_display }}</td>
+                            <td>{{ property.city }}</td>
+                            <td>{{ property.price|floatformat:0 }} {% trans "MAD" %}</td>
+                            <td>{{ property.view_count }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <span class="badge {% if property.available %}bg-success{% else %}bg-danger{% endif %}">
+                                        {% if property.available %}
+                                            {% trans "Disponible" %}
+                                        {% else %}
+                                            {% trans "Non disponible" %}
+                                        {% endif %}
+                                    </span>
+                                    {% if property.featured %}
+                                        <span class="badge bg-warning">{% trans "En vedette" %}</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'properties:property_detail' property.id %}" 
+                                       class="btn btn-sm btn-outline-primary" target="_blank"
+                                       title="{% trans 'Voir' %}">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'dashboard:edit_property' property.id %}" 
+                                       class="btn btn-sm btn-outline-secondary"
+                                       title="{% trans 'Modifier' %}">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'dashboard:delete_property' property.id %}" 
+                                       class="btn btn-sm btn-outline-danger"
+                                       title="{% trans 'Supprimer' %}">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="8" class="text-center py-4">
+                                <div class="text-muted">
+                                    <i class="fas fa-info-circle me-2"></i>{% trans "Aucune propriété trouvée" %}
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% endif %}
+
+                {% for num in page_obj.paginator.page_range %}
+                    {% if page_obj.number == num %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.urlencode %}&{{ request.GET.urlencode }}{% endif %}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Toggle availability
+    document.querySelectorAll('.toggle-availability').forEach(button => {
+        button.addEventListener('click', function() {
+            const propertyId = this.dataset.propertyId;
+            fetch('{% url "dashboard:api_toggle_availability" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ property_id: propertyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const icon = this.querySelector('i');
+                    if (data.available) {
+                        this.classList.replace('btn-secondary', 'btn-success');
+                        icon.classList.replace('fa-times-circle', 'fa-check-circle');
+                    } else {
+                        this.classList.replace('btn-success', 'btn-secondary');
+                        icon.classList.replace('fa-check-circle', 'fa-times-circle');
+                    }
+                }
+            });
+        });
+    });
+
+    // Toggle featured
+    document.querySelectorAll('.toggle-featured').forEach(button => {
+        button.addEventListener('click', function() {
+            const propertyId = this.dataset.propertyId;
+            fetch('{% url "dashboard:api_toggle_featured" %}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                },
+                body: JSON.stringify({ property_id: propertyId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.featured) {
+                        this.classList.replace('btn-secondary', 'btn-warning');
+                    } else {
+                        this.classList.replace('btn-warning', 'btn-secondary');
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %} 

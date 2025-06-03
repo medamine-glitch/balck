@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+{% load static %}
+{% load i18n %}
+
+{% block title %}{% trans "Contact Us" %}{% endblock %}
+
+{% block content %}
+<!-- Contact Section -->
+<section class="contact-section py-5">
+    <div class="container">
+        <div class="row mb-5 text-center">
+            <div class="col-lg-6 mx-auto">
+                <h1 class="h2 mb-3">{% trans "Get in Touch" %}</h1>
+                <p class="text-muted">{% trans "Have questions about our properties or services? We're here to help!" %}</p>
+            </div>
+        </div>
+        
+        <div class="row g-5">
+            <!-- Contact Form -->
+            <div class="col-lg-6">
+                <div class="contact-form-wrapper">
+                    <form method="post" class="contact-form">
+                        {% csrf_token %}
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="name" class="form-label">{% trans "Full Name" %} *</label>
+                                <input type="text" class="form-control" id="name" name="name" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">{% trans "Email Address" %} *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="phone" class="form-label">{% trans "Phone Number" %}</label>
+                                <input type="tel" class="form-control" id="phone" name="phone">
+                            </div>
+                            <div class="col-12">
+                                <label for="subject" class="form-label">{% trans "Subject" %} *</label>
+                                <input type="text" class="form-control" id="subject" name="subject" required>
+                            </div>
+                            <div class="col-12">
+                                <label for="message" class="form-label">{% trans "Message" %} *</label>
+                                <textarea class="form-control" id="message" name="message" rows="5" required></textarea>
+                            </div>
+                            <div class="col-12">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-paper-plane me-2"></i>{% trans "Send Message" %}
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Contact Information -->
+            <div class="col-lg-6">
+                <div class="contact-info-wrapper">
+                    <div class="contact-info-item mb-4">
+                        <div class="icon-box">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h3 class="h5">{% trans "Office Location" %}</h3>
+                        <p class="text-muted">123 Example Street, City Center<br>Casablanca, Morocco</p>
+                    </div>
+                    
+                    <div class="contact-info-item mb-4">
+                        <div class="icon-box">
+                            <i class="fas fa-phone-alt"></i>
+                        </div>
+                        <h3 class="h5">{% trans "Phone Numbers" %}</h3>
+                        <p class="text-muted">
+                            Sales: +212 123 456 789<br>
+                            Support: +212 987 654 321
+                        </p>
+                    </div>
+                    
+                    <div class="contact-info-item mb-4">
+                        <div class="icon-box">
+                            <i class="fas fa-envelope"></i>
+                        </div>
+                        <h3 class="h5">{% trans "Email Address" %}</h3>
+                        <p class="text-muted">
+                            info@dreamhomes.com<br>
+                            support@dreamhomes.com
+                        </p>
+                    </div>
+                    
+                    <div class="contact-info-item">
+                        <div class="icon-box">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <h3 class="h5">{% trans "Working Hours" %}</h3>
+                        <p class="text-muted">
+                            Monday - Friday: 9:00 AM - 6:00 PM<br>
+                            Saturday: 10:00 AM - 4:00 PM
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- Map -->
+                <div class="map-container mt-4">
+                    <iframe 
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3323.846981193939!2d-7.632788684855042!3d33.592882980730574!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0xda7d282e981f8db%3A0x3488829b1e86f1e4!2sCasablanca%2C%20Morocco!5e0!3m2!1sen!2sus!4v1645786254693!5m2!1sen!2sus"
+                        width="100%" 
+                        height="300" 
+                        style="border:0;" 
+                        allowfullscreen="" 
+                        loading="lazy">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.contact-section {
+    background-color: #ffffff;
+}
+
+.contact-form-wrapper {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: var(--border-radius);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+}
+
+.contact-info-wrapper {
+    background: var(--light-gray);
+    padding: 2rem;
+    border-radius: var(--border-radius);
+}
+
+.contact-info-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.icon-box {
+    width: 48px;
+    height: 48px;
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+}
+
+.icon-box i {
+    font-size: 1.25rem;
+}
+
+.map-container {
+    border-radius: var(--border-radius);
+    overflow: hidden;
+}
+
+.form-control {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e5e5e5;
+    border-radius: var(--border-radius);
+}
+
+.form-control:focus {
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 0.2rem rgba(0, 0, 0, 0.05);
+}
+
+.btn-primary {
+    padding: 0.75rem 2rem;
+}
+
+@media (max-width: 991px) {
+    .contact-info-wrapper {
+        margin-top: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('.contact-form');
+    
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        // Here you would typically handle the form submission
+        // For now, we'll just show an alert
+        alert('Thank you for your message! We will get back to you soon.');
+        form.reset();
+    });
+});
+</script>
+{% endblock %} 

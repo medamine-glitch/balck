@@ -1,0 +1,109 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% load static %}
+{% load i18n %}
+{% load crispy_forms_tags %}
+
+{% block dashboard_title %}{% trans "Ajouter une propriété" %}{% endblock %}
+
+{% block dashboard_content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">{% trans "Ajouter une propriété" %}</h1>
+        <a href="{% url 'dashboard:property_management' %}" class="btn btn-outline-primary">
+            <i class="fas fa-arrow-left me-2"></i>{% trans "Retour" %}
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-body">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        {% crispy form %}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">{% trans "Aperçu des images" %}</h5>
+                </div>
+                <div class="card-body">
+                    <div id="imagePreviewContainer">
+                        <p class="text-muted">{% trans "Les aperçus des images s'afficheront ici" %}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{{ block.super }}
+<style>
+.asteriskField {
+    color: red;
+    margin-left: 3px;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Image preview for main image
+    const mainImageInput = document.querySelector('input[type="file"][name="image"]');
+    if (mainImageInput) {
+        mainImageInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.createElement('img');
+                    preview.src = e.target.result;
+                    preview.className = 'img-fluid rounded mt-2';
+                    const container = mainImageInput.parentElement;
+                    const existingPreview = container.querySelector('img');
+                    if (existingPreview) {
+                        container.removeChild(existingPreview);
+                    }
+                    container.appendChild(preview);
+                }
+                reader.readAsDataURL(this.files[0]);
+            }
+        });
+    }
+
+    // Multiple image preview
+    const additionalImagesInput = document.querySelector('input[type="file"][name="additional_images"]');
+    const previewContainer = document.getElementById('imagePreviewContainer');
+    
+    if (additionalImagesInput) {
+        additionalImagesInput.addEventListener('change', function() {
+            previewContainer.innerHTML = ''; // Clear previous previews
+            const row = document.createElement('div');
+            row.className = 'row g-3';
+
+            Array.from(this.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const col = document.createElement('div');
+                    col.className = 'col-6';
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'img-fluid rounded';
+                    col.appendChild(img);
+                    row.appendChild(col);
+                }
+                reader.readAsDataURL(file);
+            });
+
+            previewContainer.appendChild(row);
+        });
+    }
+});
+</script>
+{% endblock %} 
